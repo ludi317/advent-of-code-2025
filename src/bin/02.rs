@@ -23,7 +23,7 @@ pub fn part_one(input: &str) -> Option<usize> {
 
         let mut b;
         let right_num_digits = num_digits(right);
-        let mut right_mask = 10usize.pow((right_num_digits / 2) as u32);
+        let right_mask = 10usize.pow((right_num_digits / 2) as u32);
         if right_num_digits % 2 == 0 {
             b = right / right_mask;
             if b > right % right_mask {

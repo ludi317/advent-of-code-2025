@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 advent_of_code::solution!(7);
 
@@ -50,8 +50,34 @@ pub fn part_one(input: &str) -> Option<usize> {
 }
 
 
-pub fn part_two(input: &str) -> Option<u64> {
-    None
+pub fn part_two(input: &str) -> Option<usize> {
+    let grid: Vec<Vec<char>> = input.lines().map(|line| line.chars().collect()).collect();
+
+    let mut s_loc: (usize, usize) = (0, 0);
+    for i in 0..grid.len() {
+        for j in 0..grid[0].len() {
+            if grid[i][j] == 'S' {
+                s_loc = (i, j);
+                break
+            }
+        }
+    }
+
+    let mut prev_col_cnts: Vec<usize> = vec![0; grid[0].len()];
+    prev_col_cnts[s_loc.1] = 1;
+    for prev_r in 0..grid.len() - 1 {
+        let mut cur_col_cnts: Vec<usize> = vec![0; grid[0].len()];
+        for c in 0..grid[0].len() {
+            if grid[prev_r][c] == '^' {
+                cur_col_cnts[c-1] += prev_col_cnts[c];
+                cur_col_cnts[c+1] += prev_col_cnts[c];
+            } else {
+                cur_col_cnts[c] += prev_col_cnts[c];
+            }
+        }
+        prev_col_cnts = cur_col_cnts;
+    }
+    Some(prev_col_cnts.iter().sum())
 }
 
 #[cfg(test)]
@@ -67,6 +93,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(40));
     }
 }

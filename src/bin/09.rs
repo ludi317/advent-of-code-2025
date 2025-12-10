@@ -49,20 +49,20 @@ pub fn part_two(input: &str) -> Option<usize> {
         })
         .collect();
 
-    // Generate all pairs (combinations r=2)
-    let mut pairs: Vec<(usize, usize, usize, usize)> = Vec::new();
+    // Generate all rectangle diagonals
+    let mut diags: Vec<(usize, usize, usize, usize)> = Vec::new();
     for i in 0..red.len() {
         for j in i + 1..red.len() {
             let (x1, y1) = red[i];
             let (x2, y2) = red[j];
             let (x_min, y_min) = (x1.min(x2), y1.min(y2));
             let (x_max, y_max) = (x1.max(x2), y1.max(y2));
-            pairs.push((x_min, y_min, x_max, y_max));
+            diags.push((x_min, y_min, x_max, y_max));
         }
     }
 
-    // Sort pairs by area in descending order
-    pairs.sort_by(|a, b| area(b.0, b.1, b.2, b.3).cmp(&area(a.0, a.1, a.2, a.3)));
+    // Sort diags by area in descending order
+    diags.sort_by(|a, b| area(b.0, b.1, b.2, b.3).cmp(&area(a.0, a.1, a.2, a.3)));
 
 
     // Generate lines (pairwise) - including wrap-around to first element
@@ -75,8 +75,8 @@ pub fn part_two(input: &str) -> Option<usize> {
         lines.push((x_min, y_min, x_max, y_max));
     }
 
-    // Find the first pair that doesn't intersect any line
-    for &(x, y, u, v) in &pairs {
+    // Find the first diagonal that doesn't intersect any line
+    for &(x, y, u, v) in &diags {
         let mut intersects = false;
 
         for &(p, q, r, s) in &lines {

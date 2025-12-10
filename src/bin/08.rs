@@ -1,4 +1,4 @@
-use advent_of_code::{get_nums_usize, Point, UnionFind};
+use advent_of_code::{Point, UnionFind, get_nums_usize};
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 
@@ -25,10 +25,7 @@ pub fn part_one(input: &str) -> Option<usize> {
     }
     let mut sizes = uf.get_size().clone();
     sizes.sort();
-    let mut ans = 1;
-    for i in sizes.len() - 3..=sizes.len() - 1 {
-        ans *= sizes[i];
-    }
+    let ans = sizes.iter().rev().take(3).product();
     Some(ans)
 }
 
@@ -52,10 +49,9 @@ pub fn part_two(input: &str) -> Option<usize> {
             cnt += 1
         }
         if cnt == points.len() - 1 {
-            return Some(points[i].x * points[j].x)         
+            return Some(points[i].x * points[j].x);
         }
     }
-
 }
 
 #[cfg(test)]

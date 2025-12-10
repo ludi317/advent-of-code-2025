@@ -73,3 +73,68 @@ pub fn get_nums_f64(s: &str) -> Vec<f64> {
     }
     nums
 }
+
+#[derive(Debug)]
+pub struct Point {
+    pub x: usize,
+    y: usize,
+    z: usize,
+}
+
+impl Point {
+    pub fn dist(&self, other: &Point) -> usize {
+        let dx = self.x.abs_diff(other.x);
+        let dy = self.y.abs_diff(other.y);
+        let dz = self.z.abs_diff(other.z);
+        dx * dx + dy * dy + dz * dz
+    }
+}
+
+impl From<Vec<usize>> for Point {
+    fn from(vec: Vec<usize>) -> Self {
+        Point {
+            x: vec[0],
+            y: vec[1],
+            z: vec[2],
+        }
+    }
+}
+
+pub struct UnionFind {
+    parent: Vec<usize>,
+    size: Vec<usize>,
+}
+
+impl UnionFind {
+    pub fn new(n: usize) -> Self {
+        Self {
+            parent: (0..n).collect(),
+            size: vec![1; n]
+        }
+    } 
+    
+    pub fn get_leader(&mut self, x: usize) -> usize {
+        if x != self.parent[x] {
+            self.parent[x] = self.get_leader(self.parent[x]);
+        }
+        self.parent[x]
+    }
+    
+    pub fn union(&mut self, x: usize, y: usize) -> bool {
+        let x_leader = self.get_leader(x);
+        let y_leader = self.get_leader(y);
+        
+        if x_leader != y_leader {
+            self.size[x_leader] += self.size[y_leader];
+            self.size[y_leader] = 0;
+            
+            self.parent[y_leader] = x_leader;
+            return true;
+        }
+        false
+    }
+    
+    pub fn get_size(&self) -> &Vec<usize> {
+        &self.size
+    }
+}

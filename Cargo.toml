@@ -29,5 +29,4 @@ tinyjson = "2.5.1"
 
 # Solution dependencies
 nom = "7.1"
-microlp = "0.2"
-arrayvec = "0.7"
+good_lp = "*"

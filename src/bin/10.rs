@@ -1,6 +1,4 @@
-use arrayvec::ArrayVec;
-use microlp::{ComparisonOp, LinearExpr, OptimizationDirection, Problem};
-
+use good_lp::{Expression, ProblemVariables, Solution, SolverModel, default_solver, variable};
 use nom::{
     IResult,
     branch::alt,
@@ -151,69 +149,83 @@ pub fn part_one(input: &str) -> Option<usize> {
     Some(ans)
 }
 
+fn solve_ilp(buttons: &[Vec<usize>], target: &[usize]) -> Option<usize> {
+    let n = target.len(); // rows
+    let b = buttons.len(); // columns
+
+    // Create optimization problem
+    let mut vars = ProblemVariables::new();
+
+    // Create variables x_0 through x_{b-1} (non-negative integers)
+    let x: Vec<_> = (0..b)
+        .map(|i| vars.add(variable().integer().min(0).name(format!("x{}", i))))
+        .collect();
+
+    // Objective: minimize sum(x_i)
+    let objective: Expression = x
+        .iter()
+        .fold(Expression::from_other_affine(0), |acc, &var| acc + var);
+
+    let mut problem = vars.minimise(objective).using(default_solver);
+
+    // Constraints: A * x = target
+    // For each row i: sum_{j} A[i][j] * x_j = target[i]
+    for i in 0..n {
+        let mut constraint = Expression::from_other_affine(0);
+
+        for j in 0..b {
+            // A[i][j] = 1 if button j affects position i, else 0
+            if buttons[j].contains(&i) {
+                constraint = constraint + x[j];
+            }
+        }
+
+        problem.add_constraint(constraint.eq(target[i] as f64));
+    }
+
+    // Solve
+    match problem.solve() {
+        Ok(solution) => {
+            let total: f64 = x.iter().map(|&var| solution.value(var)).sum();
+            Some(total as usize) // Already integer due to integer constraint
+        }
+        Err(_) => None,
+    }
+}
 
 pub fn part_two(input: &str) -> Option<usize> {
-      /*
--    Let n = target length
--    let b = # of buttons
--    
--    1. Create a matrix A (n x b) where each col is 1 group of buttons. set the row to 1 if the idx is present in the group, otherwise 0.
--    for the first line in the example, matrix A looks like:
--
--    (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}
--
--    0 0 0 0 1 1
--    0 1 0 0 0 1
--    0 0 1 1 1 0
--    1 1 0 1 0 0
--    
--    2. Target b is a straightforward col vector, 
--     
--     {3,5,4,7}
--     
--     3 
--     5 
--     4 
--     7
--     
--     3. Solve for Ax = b, where the sum of x is minimized and x is all positive integers. 
--     x_i represents the number of time button group i was pressed.
--     
--     */
+    /*
+    Let n = target length
+    let b = # of buttons
+    
+    1. Create a matrix A (n x b) where each col is 1 group of buttons. set the row to 1 if the idx is present in the group, otherwise 0.
+    for the first line in the example, matrix A looks like:
+    
+    (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}
+    
+    0 0 0 0 1 1
+    0 1 0 0 0 1
+    0 0 1 1 1 0
+    1 1 0 1 0 0
+    
+    2. Target b is a straightforward col vector, 
+     
+     {3,5,4,7}
+     
+     3 
+     5 
+     4 
+     7
+     
+     3. Solve for Ax = b, where the sum of x is minimized and x is all non-negative integers. 
+     x_i represents the number of time button group i was pressed.
+*/
     let mut ans = 0usize;
     for line in input.lines() {
         let res = parse_line_2(line).unwrap();
         let target = res.1.joltage;
-        let button_groups = res.1.buttons_vec;
-
-        // 1. Create the ILP problem (minimize total presses)
-        let mut problem = Problem::new(OptimizationDirection::Minimize);
-
-        // 2. Find an upper bound for button presses (max target value)
-        let max_presses = *target.iter().max().unwrap() as i32;
-
-        // 3. Create integer variables for each button (press counts)
-        let vars: Vec<microlp::Variable> = (0..button_groups.len())
-            .map(|_| problem.add_integer_var(1.0, (0, max_presses)))
-            .collect();
-
-        // 4. Add constraints: For each position, sum of relevant button presses == target value
-        for (idx, &target_val) in target.iter().enumerate() {
-            // Build the expression for this position
-            let mut expr = LinearExpr::empty();
-
-            // Check each button to see if it affects this position
-            for (btn_idx, button_indices) in button_groups.iter().enumerate() {
-                if button_indices.contains(&idx) {
-                    expr.add(vars[btn_idx], 1.0);
-                }
-            }
-            // Add the equality constraint
-            problem.add_constraint(expr, ComparisonOp::Eq, target_val as f64);
-        }
-
-        // 5. Solve the problem and add the result to the total
-        ans += problem.solve().unwrap().objective().round() as usize;
+        let buttons = res.1.buttons_vec;
+        ans += solve_ilp(&buttons, &target).unwrap();
     }
 
     Some(ans)
